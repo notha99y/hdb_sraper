@@ -1,0 +1,9 @@
+[about]
+about = "Scraping HDB pricing webpage for Tpy Bidadari Nov 2020"
+
+[fields]
+room = "4" # options 3,4,5
+block = "A" # options A,B,C
+ethnic = "C" # options C,M,O,A
+project = "Parkview" # options
+

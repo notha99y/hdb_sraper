@@ -1,0 +1,6 @@
+__pycache__
+.DS_Store
+**.ipynb
+**.mov
+**.mp4
+**.csv
