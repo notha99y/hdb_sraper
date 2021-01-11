@@ -1,54 +1,129 @@
+from datetime import datetime
+
 import pandas as pd
-import toml
 from bs4 import BeautifulSoup
 
 from utils import get_browser
 
-if __name__ == "__main__":
-    config = toml.load("config.toml")
-    fields = config["fields"]
-    url = f"https://services2.hdb.gov.sg/webapp/BP13AWFlatAvail/BP13EBSFlatSearch?Town=Toa+Payoh&Flat_Type=BTO&selectedTown=Toa+Payoh&Flat={fields.get('room')}-Room&ethnic={fields.get('ethnic')}&ViewOption=A&projName=N9%3BC17&Block=0&DesType=A&EthnicA=&EthnicM=&EthnicC=C&EthnicO=&numSPR=&dteBallot=202011&Neighbourhood=&Contract=&BonusFlats1=N&searchDetails=Y&brochure=true"
 
-    browser = get_browser()
-    browser.get(url)
-    block_buttons = browser.find_elements_by_class_name("e-more-info")
+class HDBScraper:
+    def __init__(self,):
+        self.button_block_dict = {
+            "Parkview": {"A": 0, "B": 1, "C": 2},
+            "Beacon": {},
+        }
+        self.project_code_dict = {
+            "Parkview": "N9%3BC17",
+            "Beacon": "N9%3BC14A",
+        }
 
-    parkview_button_block_dict = {"A": 0, "B": 1, "C": 2}
+    def print_summary(self):
+        if self.project:
+            print("Scraping Summary")
+            print("-" * 30)
+            print(f"Project: {self.project}")
+            print(f"{self.room}-Room")
+            print(f"Ethnic: {self.ethnic}")
+            print(f"Scrape all: {self.scrape_all}")
+            print(f"With price: {self.with_price}")
+        else:
+            print("Summary is not available")
 
-    interested_block = fields.get("block")
+    def scrape(
+        self,
+        room=4,
+        block="A",
+        ethnic="C",
+        project="Parkview",
+        scrape_all=True,
+        with_price=True,
+    ):
+        self.room = room
+        self.block = block
+        self.ethnic = ethnic
+        self.project = project
+        self.scrape_all = scrape_all
+        if not self.scrape_all:
+            self.with_price = False
+        else:
+            self.with_price = with_price
 
-    block_buttons[parkview_button_block_dict[interested_block]].click()
-    soup = BeautifulSoup(browser.page_source, "html.parser")
+        project_code = self.project_code_dict[self.project]
+        if scrape_all:
+            view_option = "A"
+        else:
+            view_option = 2
 
-    tables = soup.find_all("table")
+        self.print_summary()
+        self.url = f"https://services2.hdb.gov.sg/webapp/BP13AWFlatAvail/BP13EBSFlatSearch?Town=Toa+Payoh&Flat_Type=BTO&selectedTown=Toa+Payoh&Flat={room}-Room&ethnic={ethnic}&ViewOption={view_option}&projName={project_code}&Block=0&DesType=A&EthnicA=&EthnicM=&EthnicC=C&EthnicO=&numSPR=&dteBallot=202011&Neighbourhood=&Contract=&BonusFlats1=N&searchDetails=Y&brochure=true"
+        print("-" * 88)
+        print(self.url)
+        print("-" * 88)
+        browser = get_browser()
 
-    unit_table = tables[1]
-    unit_anchors = unit_table.find_all("a")
+        browser.get(self.url)
+        block_buttons = browser.find_elements_by_class_name("e-more-info")
+        project_block_button_dict = self.button_block_dict[self.project]
 
-    unit_numbers = []
-    for anchor in unit_anchors:
-        unit_numbers.append(anchor.font.text)
-
-    prices = []
-    sqms = []
-
-    for unit_number in unit_numbers:
-        browser.find_element_by_id(f"{unit_number}").click()
+        block_buttons[project_block_button_dict[self.block]].click()
         soup = BeautifulSoup(browser.page_source, "html.parser")
-        price, sqm = soup.find("span", {"id": f"{unit_number}k"}).text.split(
-            "____________________"
-        )
-        raw_string = sqm.encode("unicode_escape").decode()
-        sqm = raw_string.split("\\x")[0]
-        prices.append(price)
-        sqms.append(sqm)
 
-    res_df = pd.DataFrame()
-    res_df["unit_number"] = unit_numbers
-    res_df["price"] = prices
-    res_df["sqm"] = sqms
+        tables = soup.find_all("table")
 
-    res_df.to_csv(
-        f"{fields.get('project')}_unitprices_{fields.get('room')}room_block{fields.get('block')}.csv",
-        index=False,
-    )
+        unit_table = tables[1]
+        if self.scrape_all:
+            unit_anchors = unit_table.find_all("a")
+
+            unit_numbers = []
+            for anchor in unit_anchors:
+                unit_numbers.append(anchor.font.text)
+            res_df = pd.DataFrame()
+            res_df["unit_number"] = unit_numbers
+
+        else:
+            unit_numbers = []
+            unit_table_datas = unit_table.find_all("td")
+            for td in unit_table_datas:
+                unit_numbers.append(td.text.strip())
+            print(unit_numbers)
+            res_df = pd.DataFrame()
+            res_df["unit_number"] = unit_numbers
+
+        if self.with_price and self.scrape_all:
+            prices = []
+            sqms = []
+
+            for unit_number in unit_numbers:
+                browser.find_element_by_id(f"{unit_number}").click()
+                soup = BeautifulSoup(browser.page_source, "html.parser")
+                price, sqm = soup.find(
+                    "span", {"id": f"{unit_number}k"}
+                ).text.split("____________________")
+                raw_string = sqm.encode("unicode_escape").decode()
+                sqm = raw_string.split("\\x")[0]
+                prices.append(price)
+                sqms.append(sqm)
+
+            res_df["price"] = prices
+            res_df["sqm"] = sqms
+
+        self.res_df = res_df
+
+    def save_results(self):
+        if self.scrape_all:
+            self.res_df.to_csv(
+                f"{self.project}_unitprices_{self.room}room_block{self.block}.csv",
+                index=False,
+            )
+
+        else:
+            today = datetime.now().date()
+            self.res_df.to_csv(
+                f"Reject_{today}_block{self.block}.csv", index=False
+            )
+
+
+if __name__ == "__main__":
+    scraper = HDBScraper()
+    scraper.scrape()
+    scraper.save_results()
