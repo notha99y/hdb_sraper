@@ -119,7 +119,7 @@ class HDBScraper:
         else:
             today = datetime.now().date()
             self.res_df.to_csv(
-                f"Reject_{today}_block{self.block}.csv", index=False
+                f"Taken_{today}_block{self.block}.csv", index=False
             )
 
 
