@@ -62,10 +62,15 @@ def get_browser():
     # chrome_options.add_argument("--headless")
     chrome_options.add_argument("--window-size=1920x1080")
     chrome_driver = os.path.join(chrome_driver_path, "chromedriver")
+
     # print(chrome_driver)
     browser = webdriver.Chrome(
         chrome_options=chrome_options, executable_path=chrome_driver
     )
+
+    browser.set_page_load_timeout(5)
+    browser.implicitly_wait(5)
+    browser.set_script_timeout(5)
     return browser
 
 
