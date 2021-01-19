@@ -9,7 +9,7 @@ Currently, the script only works for **Toa Payoh Bidadari Parkview**, but I beli
 ```bash
 conda env create -f env.yml
 ```
-1. edit config in `config.toml`
+1. ~~edit config in `config.toml`~~. The new code has deprecated `config.toml` Change the arguments in the `.scrape` method of `HDBScraper`
 1. change path to chrome driver in `utils.py`
 1. Run script
 ```bash
