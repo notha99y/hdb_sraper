@@ -3,6 +3,7 @@ from datetime import datetime
 import pandas as pd
 from bs4 import BeautifulSoup
 
+from constants import HDBScraperConstants as HSC
 from utils import get_browser
 
 
@@ -10,7 +11,16 @@ class HDBScraper:
     def __init__(self,):
         self.button_block_dict = {
             "Parkview": {"A": 0, "B": 1, "C": 2},
-            "Beacon": {},
+            "Beacon": {
+                "222A": 0,
+                "222B": 1,
+                "223A": 2,
+                "223B": 3,
+                "223C": 4,
+                "224A": 5,
+                "224B": 6,
+                "224C": 7,
+            },
         }
         self.project_code_dict = {
             "Parkview": "N9%3BC17",
@@ -125,5 +135,21 @@ class HDBScraper:
 
 if __name__ == "__main__":
     scraper = HDBScraper()
-    scraper.scrape()
-    scraper.save_results()
+
+    # interested_blocks = [
+    #     "A", "B", "C"
+    # ]
+    interested_blocks = [
+        # "222A",
+        # "222B",
+        # "223A",
+        # "223B",
+        "223C",
+        "224A",
+        "224B",
+        "224C",
+    ]
+
+    for block in interested_blocks:
+        scraper.scrape(scrape_all=True, block=block, project="Beacon")
+        scraper.save_results()

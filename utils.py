@@ -43,10 +43,10 @@ def request_page(url):
     """
     Uses the requests libray and random_headers function
     to perform a GET request and return a page in text.
-    The timeout per GET request is set to 5 secs
+    The timeout per GET request is set to 10 secs
     """
     # headers = {'User-Agent': ''}
-    r = requests.get(url, headers=random_headers(), timeout=5)
+    r = requests.get(url, headers=random_headers(), timeout=10)
     return r.text
 
 
@@ -68,9 +68,9 @@ def get_browser():
         chrome_options=chrome_options, executable_path=chrome_driver
     )
 
-    browser.set_page_load_timeout(5)
-    browser.implicitly_wait(5)
-    browser.set_script_timeout(5)
+    browser.set_page_load_timeout(15)
+    browser.implicitly_wait(15)
+    browser.set_script_timeout(15)
     return browser
 
 
